@@ -38,52 +38,56 @@ void _isr_decay()
 void _isr_timer()
 {
   volatile float fDecayCPMAvgTmp = 0; // Temporary counter for averaging
+  volatile unsigned int uiDecayCounterTmp = uiDecayCounter; // Temporary storage for current decay value
+  interrupts(); // enable nested interrupts
 
-  // periodically increase timerInterrupt from 1 to MAX_TIMER_INTERVALL
-  iTimerInterrupt > MAX_TIMER_INTERVALL ? iTimerInterrupt = 1 : iTimerInterrupt++;
-
-  // Set bits
-  bTimerInterruptMask |= (1 << TIMER_TFT);
-
-  // Decay handling:
-  // Shift values
-  for (volatile unsigned char uiTmp = (DECAY_AVG_WINDOW - (ucDecayArrayReducer - 1)); uiTmp > 0; uiTmp--)
+  // Decay handling. Shift values
+  for (volatile unsigned int uiTmp = (DECAY_AVG_WINDOW - (uiDecayArrayReducer - 1)); uiTmp > 0; uiTmp--)
   {
-    iDecayArray[uiTmp] = iDecayArray[uiTmp - 1];
+    uiDecayArray[uiTmp] = uiDecayArray[uiTmp - 1];
   }
 
-  // Write new decay value to position 0
-  iDecayArray[0] = uiDecayCounter;
+  // Write new current decay value to position 0
+  // with dead time correction for each tube -> ACTUAL COUNTS = OBSERVED COUNTS / (1 - (OBSERVED COUNTS * DEADTIME))
+  uiDecayArray[0] = (unsigned int)((float)uiDecayCounterTmp / (1 - ((float)uiDecayCounterTmp * DEADTIME)));
 
   // Calculate mean value
-  for (volatile unsigned char uiTmp = 0; uiTmp < (DECAY_AVG_WINDOW - ucDecayArrayReducer); uiTmp++)
+  for (volatile unsigned int uiTmp = 0; uiTmp < (DECAY_AVG_WINDOW - uiDecayArrayReducer); uiTmp++)
   {
-    fDecayCPMAvgTmp = fDecayCPMAvgTmp + iDecayArray[uiTmp];
+    fDecayCPMAvgTmp = fDecayCPMAvgTmp + uiDecayArray[uiTmp];
   }
 
   // reduce or increase window to calculate average CPM based on current value
   // useful to reacting on large changes in counts
-  if (uiDecayCounter + (unsigned int) fDecayCPMAvgTmp > 50)
+  if (uiDecayCounterTmp + (unsigned int) fDecayCPMAvgTmp > 50)
   {
-    ucDecayArrayReducer = DECAY_AVG_WINDOW - 5;
+    uiDecayArrayReducer = DECAY_AVG_WINDOW - 5;
   }
-  else if (ucDecayArrayReducer > 2)
+  else if ((uiDecayArrayReducer > 2) && (uiDecayArrayReducer > uiDecayArrayReducerSize))
   {
-    ucDecayArrayReducer--;
+    uiDecayArrayReducer--;
   }
 
-  // Calculate CPM (currently no deadtime correction!)
-  fDecayCPM = ((fDecayCPMAvgTmp / (DECAY_AVG_WINDOW - ucDecayArrayReducer)) * 120);
+  // Calculate CPM
+  fDecayCPM = ((fDecayCPMAvgTmp / (DECAY_AVG_WINDOW - uiDecayArrayReducer)) * 60);
+
   // Limit to 10k CPM
   if (fDecayCPM > 10000) fDecayCPM = 10000;
 
-  // remove last value from counter for floating window
-  if (iDecayArray[(DECAY_AVG_WINDOW - (ucDecayArrayReducer - 1))] - uiDecayCounter < 0) {
-    uiDecayCounter -= iDecayArray[(DECAY_AVG_WINDOW - (ucDecayArrayReducer - 1))];
+  // remove last value from decay counter for floating window
+  if (uiDecayArray[(DECAY_AVG_WINDOW - (uiDecayArrayReducer - 1))] - uiDecayCounterTmp < 0) {
+    noInterrupts();
+    uiDecayCounter -= uiDecayArray[(DECAY_AVG_WINDOW - (uiDecayArrayReducer - 1))];
+    interrupts();
   }
   else
   {
-    // zeroing out decay counter
+    // or zeroing out decay counter
+    noInterrupts();
     uiDecayCounter = 0;
+    interrupts();
   }
+
+  // Set bits
+  ucTimerInterruptMask |= (1 << TIMER_TFT);
 }

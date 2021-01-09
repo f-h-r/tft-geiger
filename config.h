@@ -1,10 +1,8 @@
 // Libraries
-#include <ccspi.h>
+#include <SPI.h>
 #include <MCUFRIEND_kbv.h> // NOTE: You need to comment out line 483 "vertScroll(0, HEIGHT, 0);" in MCUFRIEND_kbv.cpp!
 #include <string.h>
-#include "utility/debug.h"
 #include <TimerOne.h>
-#include <Wire.h>
 
 
 // Debugging routines
@@ -17,32 +15,31 @@
 #endif
 
 
-// SBM-20 geiger counter
-#define EXTINT1 18 // External interrupt pin  for SBM-20 geiger counter (falling)
-#define DEADTIME 0.00019 // Deadtime of SBM-20 geiger tube in seconds (correction not implemented)
+// driver for Geiger-Mueller-Tubes
+#define EXTINT1 18 // External interrupt pin for driver(falling)
+//#define DEADTIME 0.00019 // Deadtime of geiger tube in seconds (190uS, SBM-20)
+#define DEADTIME 0.000075 // Deadtime of geiger tube in seconds (75uS, RD003/KB6011)
 #define DECAY_AVG_WINDOW 42 // Maximum size of array for calculating average decays (at least 5!)
 
 volatile unsigned int uiDecayCounter = 0; // interrupt-suitable counter for decays, increased by external interrupt
-volatile unsigned int iDecayArray[DECAY_AVG_WINDOW] = {}; // Memory for averaging decays
-
-volatile unsigned char ucDecayArrayReducer = DECAY_AVG_WINDOW - 5 ; // Reduce the virtual "size" of iDecayArray[]. Useful for narrowing down avg-window.
-volatile unsigned long fDecayCPM = 0; // interrupt-suitable average decay counter
+volatile unsigned int uiDecayArray[DECAY_AVG_WINDOW] = {0}; // Memory for averaging decays
+volatile unsigned int uiDecayArrayReducer = DECAY_AVG_WINDOW - 5 ; // Reduce the virtual "size" of uiDecayArray[]. Useful for narrowing down avg-window.
+volatile unsigned int uiDecayArrayReducerSize = 2 ; // window to check of uiDecayArray[]
+volatile float fDecayCPM = 0; // interrupt-suitable average decay counter
 float fDoseRate = 0; // current average dose rate
-unsigned char bNuclideId = 0; // default nuclide is 137Cs
 
-const char sNuclideName[7][6] = {"137Cs", "131I ", "226Ra", "90Sr ", "40K  ", "60Co ", "210Po"};
-const float fAequiDosis[7] = {0.057, 1, 0.05, 0.05, 1, 1, 0.001}; // h10 (mSv/h)/GBq in 1 m distance - "Umgebungs-Aequivalentdosis" in (nSv/h)/Bq
+const char sNuclideName[6] = {"226Ra"};
+//const float fEquivDose = 290; // 29 Imp/s / mR/h = 290 Imp/s / uSv/h (equivalent dose h*10 Ra226) - SBM-20
+const float fEquivDose = 420; // 42 Imp/s / mR/h = 420 Imp/s / uSv/h (equivalent dose h*10 Ra226) - RD003/KB6011
 
 
 // Timer-Interrupt-specific
 #define TIMER_INT_US 500000 // Triggers every us
 #define TIMER_INT_LOOPS 10 // Number of loops
-#define TIMER_TFT 7 // Toggle-Bit in iTimerInterruptMask signalling TFT update
-#define MAX_TIMER_INTERVALL 600 // Maximum interval in seconds for counter
+#define TIMER_TFT 7 // Toggle-Bit in ucTimerInterruptMask signalling TFT update
 
 // global timer interrupt indicator and counter
-volatile unsigned int iTimerInterrupt = 1; // Interrupt-able Counter for recurring actions (16bit)
-volatile unsigned char bTimerInterruptMask = 15; // Interrupt-able Char for storing bit masks and counters
+volatile unsigned char ucTimerInterruptMask = 0; // Interrupt-able Char for storing bit masks and counters
 
 
 // TFT-specific

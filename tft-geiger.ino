@@ -33,8 +33,6 @@ void setup(void)
 #endif
 
   DBG_P(F("Init...\n"));
-
-  memset((int)iDecayArray, 0, sizeof(iDecayArray)); // zeroing out measurement array
   _isr_init(); // Init ISR
   _tft_init(); // Inti TFT
   _tft_drw_defaultscreen(); // Draw default screen
@@ -52,10 +50,10 @@ void setup(void)
 void loop()
 {
   // timer flag set
-  if (bTimerInterruptMask & (unsigned char)(1 << TIMER_TFT))
+  if (ucTimerInterruptMask & (unsigned char)(1 << TIMER_TFT))
   {
     // calculate dose rate in nSv/h
-    fDoseRate = (fDecayCPM * fAequiDosis[bNuclideId]) * 60;
+    fDoseRate = (fDecayCPM / 60) * fEquivDose;
 
     // update screen
     tft.setRotation(1); // 0 = Portrait, 1 = Landscape
@@ -93,7 +91,7 @@ void loop()
     _tft_drw_graph(); // Draw graph
 
     // reset draw-tft flag
-    bTimerInterruptMask &= ~(1 << TIMER_TFT);
+    ucTimerInterruptMask &= ~(1 << TIMER_TFT);
   }
 
 }

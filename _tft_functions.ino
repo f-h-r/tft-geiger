@@ -34,8 +34,8 @@ void _tft_drw_defaultscreen()
   _tft_drw_message(83, 90, 2, NULL, "CPM", CLR_LGHTGRY, CLR_BLACK);
   _tft_drw_cpm_window();
   _tft_drw_message(57, 150, 2, NULL, "nSv/h", CLR_LGHTGRY, CLR_BLACK);
-  _tft_drw_message(25, 195, 2, NULL, sNuclideName[bNuclideId], CLR_ORANGE, CLR_BLACK);
-  _tft_drw_message(25, 215, 2, NULL, "Hp(10)", CLR_ORANGE, CLR_BLACK);
+  _tft_drw_message(25, 195, 2, NULL, sNuclideName, CLR_ORANGE, CLR_BLACK);
+  _tft_drw_message(25, 215, 2, NULL, "H*(10)", CLR_ORANGE, CLR_BLACK);
   tft.setRotation(0); // 0 = Portrait, 1 = Landscape
 
 }
@@ -76,9 +76,9 @@ void _tft_drw_cpm_window()
   tft.setTextColor(CLR_LGHTGRY, CLR_BLACK);
   tft.setTextSize(2);
   tft.print("CPM (");
-  tft.print(dtostrf((unsigned char)((DECAY_AVG_WINDOW - ucDecayArrayReducer) / 2), 1, 0, cStringTmp));
+  tft.print(dtostrf((unsigned char)((DECAY_AVG_WINDOW - uiDecayArrayReducer) / 2), 1, 0, cStringTmp));
   tft.print("s)");
-  if ((DECAY_AVG_WINDOW - ucDecayArrayReducer) < 10) tft.print(" ");
+  if ((DECAY_AVG_WINDOW - uiDecayArrayReducer) < 10) tft.print(" ");
 }
 
 
