@@ -14,12 +14,10 @@ A software for Arduino to display radioactivity measured from the driver for Gei
 * 1x of my drivers for Geiger-Mueller-Tubes (using 1 interrupt-capable input-pin)
 
 ## Libraries used
-* ccspi
+* SPI
 * MCUFRIEND_kbv
 * string
-* utility/debug
 * TimerOne
-* Wire
 
 ## Ports and Pins used
 ### Arduino Mega 2560
