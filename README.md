@@ -1,6 +1,13 @@
 # Project tft-geiger for Arduino
 A software for Arduino to display radioactivity measured from the driver for Geiger-Mueller-Tubes in a graphical manner.
 
+![Picture](photo.jpg?raw=true "Picture of module in action")
+
+See the module in action on youtube: https://youtu.be/6ZwtSG2bLH8
+
+Interested? Contact me via Email to youtube@tesla-crew.de and ask for an offer.
+
+
 ## Features
 * Quick measurement of Counts per Minute (CPM) and dose rate in nano- and micro Sievert per hour
 * Autoscaling buffer for CPM, depending on decays registered
